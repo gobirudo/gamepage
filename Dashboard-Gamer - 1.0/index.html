@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%234aa3ff;stop-opacity:1' /><stop offset='100%' style='stop-color:%23ff00d4;stop-opacity:1' /></linearGradient></defs><rect width='100' height='100' rx='20' fill='%2305060a'/><path d='M30 40 L50 60 L70 40' stroke='url(%23g)' stroke-width='12' fill='none' stroke-linecap='round' stroke-linejoin='round'/><circle cx='50' cy='75' r='8' fill='%232fdc9c'/></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOBIRUDO Dashboard Gamer</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dash-wrapper">
+        <header class="header">
+            <div class="brand">
+                <span class="brand-main">GOBIRUDO</span>
+                <span class="brand-sub">DASHBOARD GAMER</span>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-page="dash">Dashboard</button>
+                <button class="nav-btn" data-page="zerados">Meus Zerados</button>
+                <button class="nav-btn" data-page="wishlist">Minha Wishlist</button>
+            </nav>
+        </header>
+
+        <div id="filter-bar" class="filter-container" style="display: none;">
+            <input type="text" id="search-input" placeholder="Pesquisar título...">
+            <select id="platform-filter">
+                <option value="all">Todas Plataformas</option>
+            </select>
+            <select id="sort-select">
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
+                <option value="nota-desc">Melhores Notas</option>
+                <option value="nota-asc">Piores Notas</option>
+            </select>
+        </div>
+
+        <main id="content-area" class="main-layout dash-mode"></main>
+
+<div class="footer-version">
+ GOBIRUDO SYSTEM © 2026 - V5 
+ <span id="admin-trigger" class="status-dot">● ONLINE</span>
+
+ <span>
+  <button class="theme-dot" onclick="setTheme('default')">●</button>
+  <button class="theme-dot" onclick="setTheme('green')">●</button>
+  <button class="theme-dot" onclick="setTheme('orange')">●</button>
+   <button class="theme-dot" onclick="setTheme('pink')">●</button>
+    <button class="theme-dot" onclick="setTheme('white')">●</button>
+ </span>
+</div>
+    </div>
+
+    <div id="modal-form" class="modal">
+        <div class="modal-content">
+            <h3 style="color:var(--neon-blue); margin-bottom:20px; text-align:center; font-size:0.9rem; letter-spacing:2px">GERENCIAR JOGO</h3>
+            <form id="game-form">
+                <input type="hidden" id="current-page-type">
+                <input type="hidden" id="edit-index">
+                <div class="input-group"><label>Nome do Jogo</label><input type="text" id="form-game" required></div>
+                <div class="input-group"><label>URL da Capa</label><input type="text" id="form-img"></div>
+                <div class="input-group"><label>Plataforma (PC, PS5, etc)</label><input type="text" id="form-extra"></div>
+                <div class="input-group"><label>Gênero</label><input type="text" id="form-genero"></div>
+                <div class="input-group"><label>Nota (0-10) ou % Desejo</label><input type="text" id="form-nota" required></div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" onclick="closeModal()" class="backup-btn" style="flex:1">CANCELAR</button>
+                    <button type="submit" class="backup-btn" style="flex:1; background:var(--neon-blue); color:#000">SALVAR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
