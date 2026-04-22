@@ -24,6 +24,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameForm = document.getElementById('game-form');
     const adminTrigger = document.getElementById('admin-trigger');
 
+    // Star Rating System
+    let selectedStars = 0;
+    const stars = document.querySelectorAll('.star');
+    const starsInput = document.getElementById('form-stars');
+    
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            selectedStars = parseInt(star.dataset.rating);
+            updateStarDisplay();
+        });
+        
+        star.addEventListener('mouseenter', () => {
+            const hoverRating = parseInt(star.dataset.rating);
+            highlightStars(hoverRating);
+        });
+    });
+    
+    document.getElementById('star-rating').addEventListener('mouseleave', () => {
+        updateStarDisplay();
+    });
+    
+    function updateStarDisplay() {
+        highlightStars(selectedStars);
+        if (starsInput) starsInput.value = selectedStars;
+    }
+    
+    function highlightStars(rating) {
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.classList.add('active');
+            } else {
+                star.classList.remove('active');
+            }
+        });
+    }
+
     let zerados = [], wishlist = [], current = { game: 'Nenhum Jogo', img: '', nota: '0' }, currentTab = 'dash';
     
     const isAdmin = window.location.pathname.includes('admin.html');
@@ -76,26 +112,50 @@ document.addEventListener('DOMContentLoaded', () => {
         if(filterBar) filterBar.style.display = 'none';
         contentArea.className = 'main-layout dash-mode';
         contentArea.innerHTML = `
-            <aside style="display:flex; flex-direction:column; gap:15px;">
+            <aside style="display:flex; flex-direction:column; gap:10px;">
+                <!-- BIO Card -->
+                <section class="card bio-card">
+                    <div class="label-bar">GAMER BIO</div>
+                    <div style="padding:16px; text-align:center">
+                        <div class="bio-avatar">
+                            <div class="avatar-placeholder">G</div>
+                        </div>
+                        <h3 class="bio-name">GOBIRUDO</h3>
+                        <p class="bio-title">Gamer | IT Analyst Infrastructure | Guitarrist | Skater</p>
+                        <div class="bio-stats">
+                            <div class="stat-item">
+                                <span class="stat-number">${zerados.length}</span>
+                                <span class="stat-label">ZERADOS</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">${wishlist.length}</span>
+                                <span class="stat-label">WISHLIST</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">${Math.round((zerados.filter(g => g.nota >= 8).length / Math.max(zerados.length, 1)) * 100)}%</span>
+                                <span class="stat-label">SUCCESS</span>
+                            </div>
+                        </div>
+                        <div class="bio-quote">
+                            "Do código ao solo, dos riffs aos combos - vida é um grande game!"
+                        </div>
+                    </div>
+                </section>
+                
                 <section class="card" ${isAdmin ? 'onclick="openModal(\'current\')"' : ''} style="${isAdmin ? 'cursor:pointer' : ''}">
-                    <div class="label-bar">🕹️ JOGANDO AGORA</div>
-                    <div class="game-img-container" style="height: 200px"><img src="${current.img}" class="game-img" onerror="this.src='https://placehold.co/400x600/101418/2fdc9c?text=Capa'"></div>
-                    <div style="padding:12px; text-align:center">
+                    <div class="label-bar">JOGANDO AGORA</div>
+                    <div class="game-img-container" style="height: 160px"><img src="${current.img}" class="game-img" onerror="this.src='https://placehold.co/400x600/101418/2fdc9c?text=Capa'"></div>
+                    <div style="padding:8px; text-align:center">
                         <span class="game-title">${current.game}</span>
                         <div class="meta-row" style="justify-content:center">
                              <span class="tag">${current.plataforma || 'STATION'}</span>
                         </div>
                     </div>
                 </section>
-                <section class="card" style="flex:1; align-items:center; justify-content:center; padding:20px">
-                    <div class="label-bar" style="width:100%; position:absolute; top:0">📊 BIBLIOTECA</div>
-                    <div style="font-size:3rem; color:var(--neon-blue); font-weight:900; text-shadow: 0 0 20px rgba(74,163,255,0.4)">${zerados.length + wishlist.length}</div>
-                    <div style="font-size:0.6rem; color:var(--text-dim); letter-spacing:2px">JOGOS TOTAIS</div>
-                </section>
             </aside>
             <div class="rankings-grid">
-                <section class="card card-scrollable"><div class="label-bar">🏆 TOP ZERADOS</div><div id="m-z" class="scroll-area"></div></section>
-                <section class="card card-scrollable"><div class="label-bar">💎 WISHLIST PRIORITÁRIA</div><div id="m-w" class="scroll-area"></div></section>
+                <section class="card card-scrollable"><div class="label-bar">TOP ZERADOS</div><div id="m-z" class="scroll-area"></div></section>
+                <section class="card card-scrollable"><div class="label-bar">WISHLIST PRIORITÁRIA</div><div id="m-w" class="scroll-area"></div></section>
             </div>`;
         renderMini(zerados, 'm-z', 'zerados');
         renderMini(wishlist, 'm-w', 'wishlist');
@@ -170,6 +230,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('form-genero').value = g.genero || '';
         document.getElementById('form-nota').value = g.nota || '';
         document.getElementById('form-horas').value = g.horas || '';
+        document.getElementById('form-review').value = g.review || '';
+        document.getElementById('form-tags').value = g.tags || '';
+        
+        // Set star rating
+        selectedStars = g.stars || 0;
+        updateStarDisplay();
+        
         modal.style.display = 'flex';
     };
 
@@ -194,7 +261,10 @@ if(horasVal && !isNaN(horasVal)) {
             plataforma: document.getElementById('form-extra').value, 
             genero: document.getElementById('form-genero').value,
             nota: document.getElementById('form-nota').value,
-            horas: horasVal
+            horas: horasVal,
+            review: document.getElementById('form-review').value,
+            tags: document.getElementById('form-tags').value,
+            stars: selectedStars
         };
         if (type === 'current') current = newData;
         else if (index !== "") { type === 'zerados' ? zerados[index] = newData : wishlist[index] = newData; }
@@ -250,12 +320,131 @@ if(horasVal && !isNaN(horasVal)) {
 });
 
 function setTheme(theme) {
-  document.body.classList.remove('theme-default','theme-green','theme-orange','theme-pink','theme-white');
-  document.body.classList.add('theme-' + theme);
+  document.body.classList.remove('theme-cyberpunk','theme-emerald','theme-cat','theme-oceanic','theme-highcontrast');
+  if (theme && theme !== 'default') {
+    document.body.classList.add('theme-' + theme);
+  }
   localStorage.setItem('gobirudo_theme', theme);
 }
 
+// Menu Mobile Functions
+function toggleMobileMenu() {
+  const menuToggle = document.getElementById('mobile-menu-toggle');
+  const nav = document.querySelector('.nav');
+  const overlay = document.getElementById('nav-overlay');
+  
+  menuToggle.classList.toggle('active');
+  nav.classList.toggle('active');
+  overlay.classList.toggle('active');
+  
+  // Prevent body scroll when menu is open
+  document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
+}
+
+// Theme Cycle Function
+const themes = ['default', 'cyberpunk', 'emerald', 'cat', 'oceanic', 'highcontrast'];
+let currentThemeIndex = 0;
+
+function cycleTheme() {
+  currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+  const newTheme = themes[currentThemeIndex];
+  setTheme(newTheme);
+  
+  // Add visual feedback
+  const themeBtn = document.querySelector('.theme-toggle-btn');
+  themeBtn.style.transform = 'scale(1.2) rotate(360deg)';
+  setTimeout(() => {
+    themeBtn.style.transform = '';
+  }, 300);
+}
+
+// Audio Player Functions
+let currentAudio = null;
+let isPlaying = false;
+
+const audioTracks = {
+  lofi: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  synth: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+  chill: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+  rock: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+  electronic: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+  ambient: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+  retro: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+  battle: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'
+};
+
+function toggleAudio() {
+  const playBtn = document.getElementById('play-pause-btn');
+  const audioIcon = playBtn.querySelector('.audio-icon');
+  const audioBars = document.querySelectorAll('.audio-bar');
+  
+  if (!currentAudio) {
+    const trackSelector = document.getElementById('track-selector');
+    const selectedTrack = trackSelector.value;
+    currentAudio = new Audio(audioTracks[selectedTrack]);
+    currentAudio.loop = true;
+    currentAudio.volume = 0.3;
+    
+    currentAudio.addEventListener('ended', () => {
+      if (isPlaying) {
+        currentAudio.play();
+      }
+    });
+  }
+  
+  if (isPlaying) {
+    currentAudio.pause();
+    audioIcon.textContent = 'play';
+    audioBars.forEach(bar => bar.classList.remove('playing'));
+    isPlaying = false;
+  } else {
+    currentAudio.play().catch(e => console.log('Audio play failed:', e));
+    audioIcon.textContent = 'pause';
+    audioBars.forEach(bar => bar.classList.add('playing'));
+    isPlaying = true;
+  }
+}
+
+function changeTrack() {
+  const trackSelector = document.getElementById('track-selector');
+  const selectedTrack = trackSelector.value;
+  
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  
+  currentAudio = new Audio(audioTracks[selectedTrack]);
+  currentAudio.loop = true;
+  currentAudio.volume = 0.3;
+  
+  if (isPlaying) {
+    currentAudio.play().catch(e => console.log('Audio play failed:', e));
+  }
+}
+
+// Initialize theme on load
 (function () {
   const saved = localStorage.getItem('gobirudo_theme') || 'default';
   setTheme(saved);
+  
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', (e) => {
+    const nav = document.querySelector('.nav');
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    
+    if (!nav.contains(e.target) && !menuToggle.contains(e.target) && nav.classList.contains('active')) {
+      toggleMobileMenu();
+    }
+  });
+  
+  // Handle escape key for mobile menu
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const nav = document.querySelector('.nav');
+      if (nav.classList.contains('active')) {
+        toggleMobileMenu();
+      }
+    }
+  });
 })();

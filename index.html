@@ -9,17 +9,70 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Menu Hambúrguer Mobile -->
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle" onclick="toggleMobileMenu()">
+        <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    
+    <!-- Overlay Mobile -->
+    <div class="nav-overlay" id="nav-overlay" onclick="toggleMobileMenu()"></div>
+    
     <div class="dash-wrapper">
         <header class="header">
             <div class="brand">
                 <span class="brand-main">GOBIRUDO</span>
                 <span class="brand-sub">DASHBOARD GAMER</span>
             </div>
-            <nav class="nav">
-                <button class="nav-btn active" data-page="dash">Dashboard</button>
-                <button class="nav-btn" data-page="zerados">Meus Zerados</button>
-                <button class="nav-btn" data-page="wishlist">Minha Wishlist</button>
-            </nav>
+            
+            <!-- Header Bar with Navigation, Player and Themes -->
+            <div class="header-bar">
+                <!-- Navigation -->
+                <nav class="nav">
+                    <button class="nav-btn active" data-page="dash">Dashboard</button>
+                    <button class="nav-btn" data-page="zerados">Meus Zerados</button>
+                    <button class="nav-btn" data-page="wishlist">Minha Wishlist</button>
+                </nav>
+                
+                <!-- Audio Player Gamer -->
+                <div class="audio-player">
+                    <button class="audio-btn" id="play-pause-btn" onclick="toggleAudio()">
+                        <span class="audio-icon">play</span>
+                    </button>
+                    <select class="track-selector" id="track-selector" onchange="changeTrack()">
+                        <option value="lofi">Lo-Fi Vibes</option>
+                        <option value="synth">Synthwave</option>
+                        <option value="chill">Chill Gaming</option>
+                        <option value="rock">Rock'n'Roll</option>
+                        <option value="electronic">Electronic</option>
+                        <option value="ambient">Ambient</option>
+                        <option value="retro">Retro Gaming</option>
+                        <option value="battle">Battle Mode</option>
+                    </select>
+                    <div class="audio-visualizer">
+                        <span class="audio-bar"></span>
+                        <span class="audio-bar"></span>
+                        <span class="audio-bar"></span>
+                        <span class="audio-bar"></span>
+                    </div>
+                </div>
+                
+                <!-- Theme Button -->
+                <button class="theme-toggle-btn" onclick="cycleTheme()" title="Mudar Tema">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7V12C2 16.5 4.23 20.68 7.62 23.15L12 24L16.38 23.15C19.77 20.68 22 16.5 22 12V7L12 2Z" fill="currentColor" opacity="0.3"/>
+                        <path d="M12 2L2 7V12C2 16.5 4.23 20.68 7.62 23.15L12 24L16.38 23.15C19.77 20.68 22 16.5 22 12V7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                        <path d="M12 9C13.66 9 15 10.34 15 12C15 13.66 13.66 15 12 15C10.34 15 9 13.66 9 12C9 10.34 10.34 9 12 9Z" fill="currentColor" opacity="0.5"/>
+                    </svg>
+                </button>
+                
+                <!-- Status Online -->
+                <span id="admin-trigger" class="status-dot" onclick="window.location.href=window.location.pathname.includes('admin.html') ? 'index.html' : 'login.html'">ONLINE</span>
+            </div>
         </header>
 
         <div id="filter-bar" class="filter-container" style="display: none;">
@@ -34,19 +87,22 @@
         </div>
 
         <main id="content-area" class="main-layout dash-mode"></main>
-
-        <div class="footer-version">
-         GOBIRUDO SYSTEM © 2026 - V5 
-         <span id="admin-trigger" class="status-dot">● ONLINE</span>
-         <span>
-          <button class="theme-dot" onclick="setTheme('default')">●</button>
-          <button class="theme-dot" onclick="setTheme('green')">●</button>
-          <button class="theme-dot" onclick="setTheme('orange')">●</button>
-          <button class="theme-dot" onclick="setTheme('pink')">●</button>
-          <button class="theme-dot" onclick="setTheme('white')">●</button>
-         </span>
-        </div>
     </div>
+
+    <!-- Footer AI Credits -->
+    <footer class="ai-footer">
+        <div class="ai-footer-content">
+            <div class="ai-logo">
+                <span class="ai-icon">AI</span>
+                <span class="ai-text">GOBIRUDO</span>
+            </div>
+            <div class="ai-credits">
+                <span class="ai-tag">Powered by AI Technologies</span>
+                <span class="ai-support">Intelligent Support System</span>
+            </div>
+            <div class="ai-year">© 2026</div>
+        </div>
+    </footer>
 
     <div id="modal-form" class="modal">
         <div class="modal-content">
@@ -60,6 +116,18 @@
                 <div class="input-group"><label>Gênero</label><input type="text" id="form-genero"></div>
                 <div class="input-group"><label>Tempo de Jogo (Apenas número)</label><input type="text" id="form-horas"></div>
                 <div class="input-group"><label>Nota (0-10) ou % Desejo</label><input type="text" id="form-nota" required></div>
+                <div class="input-group"><label>Review Pessoal</label><textarea id="form-review" rows="3" placeholder="Seus pensamentos sobre este jogo..."></textarea></div>
+                <div class="input-group"><label>Tags Personalizadas</label><input type="text" id="form-tags" placeholder="Ex: Replayável, Indicado por amigos, Multiplayer"></div>
+                <div class="input-group"><label>Avaliação em Estrelas</label>
+                    <div class="star-rating" id="star-rating">
+                        <span class="star" data-rating="1">&#9733;</span>
+                        <span class="star" data-rating="2">&#9733;</span>
+                        <span class="star" data-rating="3">&#9733;</span>
+                        <span class="star" data-rating="4">&#9733;</span>
+                        <span class="star" data-rating="5">&#9733;</span>
+                    </div>
+                    <input type="hidden" id="form-stars" value="0">
+                </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button type="button" onclick="closeModal()" class="backup-btn" style="flex:1">CANCELAR</button>
                     <button type="submit" class="backup-btn" style="flex:1; background:var(--neon-blue); color:#000">SALVAR</button>
