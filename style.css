@@ -128,6 +128,7 @@ body::after {
 /* Header Bar - Navegação, Player e Temas - TAMANHO REDUZIDO */
 .header-bar {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-sm);
@@ -137,7 +138,7 @@ body::after {
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: clamp(12px, 1.5vw, 18px);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* Navigation dentro do header bar */
@@ -145,9 +146,10 @@ body::after {
   display: flex;
   gap: var(--spacing-xs);
   background: transparent;
-  border: none;
   padding: 0;
   border-radius: 0;
+  order: 1 !important;
+  flex-shrink: 0;
 }
 
 .header-bar .nav-btn {
@@ -184,7 +186,8 @@ body::after {
   padding: 0;
   margin: 0;
   border-radius: 0;
-  order: 2;
+  order: 2 !important;
+  flex-shrink: 0;
 }
 
 .header-bar .audio-player::before {
@@ -206,6 +209,8 @@ body::after {
   cursor: pointer;
   transition: var(--transition-smooth);
   position: relative;
+  order: 3 !important;
+  flex-shrink: 0;
 }
 
 .header-bar .theme-toggle-btn:hover {
@@ -230,6 +235,8 @@ body::after {
   white-space: nowrap;
   color: var(--neon-green) !important;
   animation: blinkGreen 2s ease-in-out infinite;
+  order: 4 !important;
+  flex-shrink: 0;
 }
 
 @keyframes blinkGreen {
