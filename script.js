@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    let zerados = [], wishlist = [], current = { game: 'Nenhum Jogo', img: '', nota: '0' }, currentTab = 'dash';
+    let zerados = [], wishlist = [], dropados = [], current = { game: 'Nenhum Jogo', img: '', nota: '0' }, currentTab = 'dash';
     
     const isAdmin = window.location.pathname.includes('admin.html');
     
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    const save = () => db.ref('users/' + USER_ID).set({ zerados, wishlist, current });
+    const save = () => db.ref('users/' + USER_ID).set({ zerados, wishlist, dropados, current });
 
     const getScoreBadge = (n) => {
         let nota = parseFloat(n) || 0;
@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data) {
             zerados = data.zerados || [];
             wishlist = data.wishlist || [];
+            dropados = data.dropados || [];
             current = data.current || { game: 'Nenhum Jogo', img: '', nota: '0' };
             updatePlatformFilter();
             currentTab === 'dash' ? loadDash() : renderList();
@@ -102,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const updatePlatformFilter = () => {
-        const allGames = [...zerados, ...wishlist];
+        const allGames = [...zerados, ...wishlist, ...dropados];
         const platforms = [...new Set(allGames.map(g => g.plataforma).filter(p => p))];
         platformFilter.innerHTML = '<option value="all">Todas Plataformas</option>' + 
             platforms.map(p => `<option value="${p}">${p}</option>`).join('');
@@ -132,8 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="stat-label">WISHLIST</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-number">${Math.round((zerados.filter(g => g.nota >= 8).length / Math.max(zerados.length, 1)) * 100)}%</span>
-                                <span class="stat-label">SUCCESS</span>
+                                <span class="stat-number">${dropados.length}</span>
+                                <span class="stat-label">DROPADOS</span>
                             </div>
                         </div>
                         <div class="bio-quote">
@@ -150,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="meta-row" style="justify-content:center">
                              <span class="tag">${current.plataforma || 'STATION'}</span>
                         </div>
+                        ${isAdmin && current.game !== 'Nenhum Jogo' ? `<button onclick="askZerado()" style="margin-top:10px; padding:6px 12px; background:var(--neon-green); color:#000; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.8rem;">Zerado?</button>` : ''}
                     </div>
                 </section>
             </aside>
@@ -180,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.renderList = () => {
-        const data = currentTab === 'zerados' ? zerados : wishlist;
+        const data = currentTab === 'zerados' ? zerados : currentTab === 'wishlist' ? wishlist : dropados;
         const term = searchInput.value.toLowerCase();
         const plat = platformFilter.value;
         const sort = sortSelect.value;
@@ -193,9 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         contentArea.className = 'main-layout list-mode';
         contentArea.innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px;">
-            ${isAdmin ? `<div class="card" onclick="openModal('${currentTab}')" style="border: 2px dashed var(--border)!important; align-items:center; justify-content:center; min-height:220px; cursor:pointer; background:transparent!important">➕ NOVO JOGO</div>` : ''}
+            ${isAdmin ? `<div class="card" onclick="openModal('${currentTab}')" style="border: 2px dashed var(--border)!important; align-items:center; justify-content:center; min-height:220px; cursor:pointer; background:transparent!important">+ NOVO JOGO</div>` : ''}
             ${filtered.map(g => `
-                <div class="card">
+                <div class="card" ${g.review && g.review.trim() ? `onclick="toggleCommentInline(${data.indexOf(g)})" style="cursor:pointer;"` : ''}>
                     <div class="game-img-container" style="height:240px"><img src="${g.img}" class="game-img" onerror="this.src='https://placehold.co/400x600/101418/2fdc9c?text=Capa'"></div>
                     <div style="padding:15px">
                         <span class="game-title">${g.game}</span>
@@ -209,21 +211,30 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div style="display:flex; align-items:center; gap:5px">
                                         <span style="font-size:0.55rem; color:var(--text-dim)">SCORE</span>
                                         ${getScoreBadge(g.nota)}
-                                    </div>
-                                    ${g.horas ? `<div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--neon-green); margin-top:2px; font-weight:bold"><span>🕒</span><span>${g.horas}</span></div>` : ''}
                                 </div>
-                            ` : `<span class="tag" style="border-color:var(--neon-pink); color:var(--neon-pink); font-weight:bold">❤️ ${g.nota}%</span>`}
+                                ${g.horas ? `<div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--neon-green); margin-top:2px; font-weight:bold"><span></span><span>${g.horas}</span></div>` : ''}
+                            </div>
+                        ` : currentTab === 'wishlist' ? `<span class="tag" style="border-color:var(--neon-pink); color:var(--neon-pink); font-weight:bold"> ${g.nota}%</span>` : `<span class="tag" style="border-color:#ff4a4a; color:#ff4a4a; font-weight:bold"> ${g.nota || 'N/A'}</span>`}
                             
-                            ${isAdmin ? `<div style="display:flex; gap:6px"><button class="backup-btn" onclick="openModal('${currentTab}', ${data.indexOf(g)})" style="padding:4px 8px">✏️</button><button class="backup-btn" onclick="deleteItem('${currentTab}', ${data.indexOf(g)})" style="color:#ff4a4a; padding:4px 8px">✖</button></div>` : ''}
+
+                            ${currentTab === 'wishlist' && isAdmin ? `<button onclick="event.stopPropagation(); askZeradoWishlist(${data.indexOf(g)})" style="margin-top:8px; padding:4px 8px; background:var(--neon-green); color:#000; border:none; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.7rem; width:100%;">Zerado?</button>` : ''}
+                            ${isAdmin ? `
+                            <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+                                <button class="icon-btn" onclick="event.stopPropagation(); openModal('${currentTab}', ${data.indexOf(g)})" title="Editar" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)); color:var(--text); border:1px solid var(--border); border-radius:8px; cursor:pointer; font-size:0.75rem; font-weight:600; transition:all 0.3s ease; box-shadow:0 2px 8px rgba(255, 255, 255, 0.1);">edit</button>
+                                <button class="icon-btn" onclick="event.stopPropagation(); deleteItem('${currentTab}', ${data.indexOf(g)})" title="Excluir" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, rgba(255, 74, 74, 0.3), rgba(255, 74, 74, 0.1)); color:#ff4a4a; border:1px solid #ff4a4a; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600; transition:all 0.3s ease; box-shadow:0 2px 8px rgba(255, 74, 74, 0.3);">×</button>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
-                </div>`).join('')}</div>`;
+                </div>
+            `).join('')}
+        </div>`;
     };
 
     window.openModal = (type, index = null) => {
         document.getElementById('current-page-type').value = type;
         document.getElementById('edit-index').value = index !== null ? index : "";
-        const g = (type === 'current') ? current : (index !== null ? (type === 'zerados' ? zerados[index] : wishlist[index]) : {});
+        const g = (type === 'current') ? current : (index !== null ? (type === 'zerados' ? zerados[index] : type === 'wishlist' ? wishlist[index] : dropados[index]) : {});
         document.getElementById('form-game').value = g.game || '';
         document.getElementById('form-img').value = g.img || '';
         document.getElementById('form-extra').value = g.plataforma || '';
@@ -241,6 +252,253 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.closeModal = () => modal.style.display = 'none';
+
+    window.toggleComment = (index) => {
+        const data = currentTab === 'zerados' ? zerados : currentTab === 'wishlist' ? wishlist : dropados;
+        const game = data[index];
+        const commentModal = document.getElementById('comment-modal');
+        const commentContent = document.getElementById('comment-content');
+        
+        commentContent.textContent = game.review || 'Nenhum comentário disponível.';
+        commentModal.style.display = 'flex';
+    };
+
+    window.closeCommentModal = () => {
+        document.getElementById('comment-modal').style.display = 'none';
+    };
+
+    window.toggleCommentInline = (index) => {
+        const data = currentTab === 'zerados' ? zerados : currentTab === 'wishlist' ? wishlist : dropados;
+        const game = data[index];
+        const cards = document.querySelectorAll('.card');
+        
+        // Encontra o card correto baseado no índice do jogo
+        let targetCard;
+        if (isAdmin && currentTab !== 'dash') {
+            // Em páginas de lista com admin, pula o primeiro card (+ NOVO JOGO)
+            targetCard = cards[index + 1];
+        } else {
+            // Dashboard ou usuário normal, usa o índice direto
+            targetCard = cards[index];
+        }
+        
+        // Remove todos os overlays abertos
+        document.querySelectorAll('.comment-overlay').forEach(overlay => overlay.remove());
+        
+        if (!game.review || game.review.trim() === '') {
+            // Se não tiver comentário, não faz nada
+            return;
+        }
+        
+        // Cria overlay de comentário
+        const overlay = document.createElement('div');
+        overlay.className = 'comment-overlay';
+        overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(5, 6, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--neon-blue);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            cursor: default;
+            animation: fadeIn 0.3s ease;
+        `;
+        
+        overlay.innerHTML = `
+            <h4 style="color: var(--neon-blue); margin-bottom: 15px; text-align: center;">COMENTÁRIO</h4>
+            <p style="color: var(--text); text-align: center; line-height: 1.5; font-size: 0.9rem;">${game.review}</p>
+            <small style="color: var(--text-dim); margin-top: 15px;">Fecha automaticamente em 5 segundos</small>
+        `;
+        
+        // Adiciona ao card
+        targetCard.style.position = 'relative';
+        targetCard.appendChild(overlay);
+        
+        // Fecha automaticamente após 5 segundos
+        setTimeout(() => {
+            if (overlay.parentNode) {
+                overlay.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => overlay.remove(), 300);
+            }
+        }, 5000);
+        
+        // Adiciona animações CSS se não existirem
+        if (!document.querySelector('#comment-animations')) {
+            const style = document.createElement('style');
+            style.id = 'comment-animations';
+            style.textContent = `
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: scale(0.9); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                @keyframes fadeOut {
+                    from { opacity: 1; transform: scale(1); }
+                    to { opacity: 0; transform: scale(0.9); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    };
+
+    window.showFinishGameModal = () => {
+        document.getElementById('finish-game-modal').style.display = 'flex';
+    };
+
+    window.closeFinishGameModal = () => {
+        document.getElementById('finish-game-modal').style.display = 'none';
+    };
+
+    window.moveGame = (destination) => {
+        if (current.game !== 'Nenhum Jogo') {
+            // Adiciona nota padrão se não existir
+            if (!current.nota || current.nota === '0') {
+                current.nota = destination === 'zerados' ? '8' : '5';
+            }
+            
+            // Move para o array correspondente
+            if (destination === 'zerados') {
+                zerados.push({...current});
+            } else {
+                dropados.push({...current});
+            }
+            
+            // Limpa o jogo atual
+            current = { game: 'Nenhum Jogo', img: '', nota: '0' };
+            
+            save();
+            closeFinishGameModal();
+            loadDash();
+        }
+    };
+
+    window.askZerado = () => {
+        const modal = document.getElementById('finish-game-modal');
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <h3 style="color:var(--neon-green); margin-bottom:15px; text-align:center;">ZERADO?</h3>
+                <p style="text-align:center; margin-bottom:20px; color:var(--text);">Você zerou este jogo?</p>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="confirmZerado()" class="backup-btn" style="flex:1; background:var(--neon-green); color:#000;">SIM</button>
+                    <button onclick="askDropado()" class="backup-btn" style="flex:1;">NÃO</button>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    };
+
+    window.askDropado = () => {
+        const modal = document.getElementById('finish-game-modal');
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <h3 style="color:#ff4a4a; margin-bottom:15px; text-align:center;">DROPADO?</h3>
+                <p style="text-align:center; margin-bottom:20px; color:var(--text);">Você quer dropar este jogo?</p>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="confirmDropado()" class="backup-btn" style="flex:1; background:#ff4a4a; color:#fff;">SIM</button>
+                    <button onclick="closeFinishGameModal()" class="backup-btn" style="flex:1;">NÃO</button>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    };
+
+    window.confirmZerado = () => {
+        if (current.game !== 'Nenhum Jogo') {
+            if (!current.nota || current.nota === '0') {
+                current.nota = '8';
+            }
+            zerados.push({...current});
+            current = { game: 'Nenhum Jogo', img: '', nota: '0' };
+            save();
+            closeFinishGameModal();
+            loadDash();
+        }
+    };
+
+    window.confirmDropado = () => {
+        if (current.game !== 'Nenhum Jogo') {
+            if (!current.nota || current.nota === '0') {
+                current.nota = '5';
+            }
+            dropados.push({...current});
+            current = { game: 'Nenhum Jogo', img: '', nota: '0' };
+            save();
+            closeFinishGameModal();
+            loadDash();
+        }
+    };
+
+    window.askZeradoWishlist = (index) => {
+        const game = wishlist[index];
+        const modal = document.getElementById('finish-game-modal');
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <h3 style="color:var(--neon-green); margin-bottom:15px; text-align:center;">ZERADO?</h3>
+                <p style="text-align:center; margin-bottom:20px; color:var(--text);">Você zerou "${game.game}"?</p>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="confirmZeradoWishlist(${index})" class="backup-btn" style="flex:1; background:var(--neon-green); color:#000;">SIM</button>
+                    <button onclick="askDropadoWishlist(${index})" class="backup-btn" style="flex:1;">NÃO</button>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    };
+
+    window.askDropadoWishlist = (index) => {
+        const game = wishlist[index];
+        const modal = document.getElementById('finish-game-modal');
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <h3 style="color:#ff4a4a; margin-bottom:15px; text-align:center;">DROPADO?</h3>
+                <p style="text-align:center; margin-bottom:20px; color:var(--text);">Você dropou "${game.game}"?</p>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="confirmDropadoWishlist(${index})" class="backup-btn" style="flex:1; background:#ff4a4a; color:#fff;">SIM</button>
+                    <button onclick="closeFinishGameModal()" class="backup-btn" style="flex:1;">NÃO</button>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    };
+
+    window.confirmZeradoWishlist = (index) => {
+        const game = wishlist[index];
+        // Adiciona nota padrão se não existir
+        if (!game.nota || game.nota === '0') {
+            game.nota = '8';
+        }
+        
+        // Move para zerados e remove da wishlist
+        zerados.push({...game});
+        wishlist.splice(index, 1);
+        
+        save();
+        closeFinishGameModal();
+        renderList();
+    };
+
+    window.confirmDropadoWishlist = (index) => {
+        const game = wishlist[index];
+        // Adiciona nota padrão se não existir
+        if (!game.nota || game.nota === '0') {
+            game.nota = '5';
+        }
+        
+        // Move para dropados e remove da wishlist
+        dropados.push({...game});
+        wishlist.splice(index, 1);
+        
+        save();
+        closeFinishGameModal();
+        renderList();
+    };
 
     gameForm.onsubmit = (e) => {
         e.preventDefault();
@@ -267,18 +525,25 @@ if(horasVal && !isNaN(horasVal)) {
             stars: selectedStars
         };
         if (type === 'current') current = newData;
-        else if (index !== "") { type === 'zerados' ? zerados[index] = newData : wishlist[index] = newData; }
-        else { type === 'zerados' ? zerados.push(newData) : wishlist.push(newData); }
+        else if (index !== "") { type === 'zerados' ? zerados[index] = newData : type === 'wishlist' ? wishlist[index] = newData : dropados[index] = newData; }
+        else { type === 'zerados' ? zerados.push(newData) : type === 'wishlist' ? wishlist.push(newData) : dropados.push(newData); }
         save(); closeModal();
     };
 
-    window.deleteItem = (type, i) => { if (confirm('Remover este jogo?')) { type === 'zerados' ? zerados.splice(i, 1) : wishlist.splice(i, 1); save(); } };
+    window.deleteItem = (type, i) => { if (confirm('Remover este jogo?')) { type === 'zerados' ? zerados.splice(i, 1) : type === 'wishlist' ? wishlist.splice(i, 1) : dropados.splice(i, 1); save(); } };
 
     navButtons.forEach(btn => btn.onclick = () => {
         navButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentTab = btn.getAttribute('data-page');
-        if (currentTab === 'dash') loadDash(); else { if(filterBar) filterBar.style.display = 'flex'; renderList(); }
+        if (currentTab === 'dash') loadDash(); else { 
+            if(filterBar) filterBar.style.display = 'flex'; 
+            // Define ordenação padrão para Meus Zerados como maior nota
+            if (currentTab === 'zerados' && sortSelect) {
+                sortSelect.value = 'nota-desc';
+            }
+            renderList(); 
+        }
     });
 
     if(searchInput) searchInput.oninput = renderList;
@@ -286,7 +551,7 @@ if(horasVal && !isNaN(horasVal)) {
     if(platformFilter) platformFilter.onchange = renderList;
 
     window.exportBackup = () => {
-        const data = { zerados, wishlist, current };
+        const data = { zerados, wishlist, dropados, current };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -306,6 +571,7 @@ if(horasVal && !isNaN(horasVal)) {
                 if (confirm('Isso irá substituir todos os seus jogos atuais. Deseja continuar?')) {
                     zerados = data.zerados || [];
                     wishlist = data.wishlist || [];
+                    dropados = data.dropados || [];
                     current = data.current || { game: 'Nenhum Jogo', img: '', nota: '0' };
                     save();
                     alert('Backup restaurado com sucesso!');
@@ -320,7 +586,7 @@ if(horasVal && !isNaN(horasVal)) {
 });
 
 function setTheme(theme) {
-  document.body.classList.remove('theme-cyberpunk','theme-emerald','theme-cat','theme-oceanic','theme-highcontrast');
+  document.body.classList.remove('theme-cyberpunk','theme-emerald','theme-cat','theme-oceanic','theme-highcontrast','theme-halloween','theme-christmas','theme-spring');
   if (theme && theme !== 'default') {
     document.body.classList.add('theme-' + theme);
   }
@@ -342,7 +608,7 @@ function toggleMobileMenu() {
 }
 
 // Theme Cycle Function
-const themes = ['default', 'cyberpunk', 'emerald', 'cat', 'oceanic', 'highcontrast'];
+const themes = ['default', 'cyberpunk', 'emerald', 'cat', 'oceanic', 'highcontrast', 'halloween', 'christmas', 'spring'];
 let currentThemeIndex = 0;
 
 function cycleTheme() {
